@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Three ideas behind calculus, in 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Literata:opsz,wght@7..72,500;7..72,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAFCF7; --grid:#DCE8F2; --ink:#1F3A5F; --muted:#5A6F88;
+  --hi:#F5DF4D; --hi-soft:rgba(245,223,77,.55); --pink:#D9467A; --green:#21895A; --blue:#2F6FB0;
+  --panel:#FFFFFF; --line:#C9D8E6;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#132033; --grid:#1E2F47; --ink:#E4EDF7; --muted:#9DB0C7;
+    --hi:#E8D24F; --hi-soft:rgba(232,210,79,.35); --pink:#FF7EA9; --green:#4FCB8F; --blue:#6FA8E8;
+    --panel:#182840; --line:#2B4062;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#132033; --grid:#1E2F47; --ink:#E4EDF7; --muted:#9DB0C7;
+  --hi:#E8D24F; --hi-soft:rgba(232,210,79,.35); --pink:#FF7EA9; --green:#4FCB8F; --blue:#6FA8E8;
+  --panel:#182840; --line:#2B4062;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; color:var(--ink); background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:28px 28px;
+  font-family:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  font-size:1.125rem; line-height:1.5;
+}
+.wrap{max-width:1280px; margin:0 auto; padding:1.5rem 1.25rem 3rem}
+header{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:1rem; margin-bottom:1.25rem}
+h1{font-family:"Literata", Georgia, serif; font-weight:700; font-size:clamp(1.8rem,3.5vw,2.6rem); line-height:1.1; margin:0}
+.tabs{display:flex; gap:.5rem; flex-wrap:wrap}
+.tab{font:inherit; font-weight:700; cursor:pointer; color:var(--ink); background:var(--panel); border:2px solid var(--line); border-radius:999px; padding:.5rem 1.1rem}
+.tab[aria-selected="true"]{background:var(--hi); border-color:var(--hi); color:#1F3A5F}
+.tab:focus-visible, button:focus-visible, input:focus-visible{outline:3px solid var(--pink); outline-offset:2px}
+.panel{display:grid; grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr); gap:1.25rem; align-items:start}
+.panel[hidden]{display:none}
+.stage{position:relative; background:var(--panel); border:2px solid var(--ink); border-radius:6px; overflow:hidden}
+canvas{display:block; width:100%; aspect-ratio:4/3; touch-action:none; cursor:grab}
+canvas:active{cursor:grabbing}
+.reset{position:absolute; right:.6rem; top:.6rem; font:inherit; font-size:.95rem; cursor:pointer; color:var(--ink); background:var(--panel); border:2px solid var(--line); border-radius:4px; padding:.25rem .6rem}
+.side{background:var(--panel); border:2px solid var(--line); border-radius:6px; padding:1.25rem 1.25rem 1.5rem}
+h2{font-family:"Literata", Georgia, serif; font-weight:700; font-size:1.6rem; line-height:1.2; margin:0 0 .5rem}
+.lede{margin:0 0 1.1rem; color:var(--muted)}
+.control{margin:0 0 .9rem}
+.control label{display:flex; justify-content:space-between; gap:.5rem; font-weight:700; margin-bottom:.3rem}
+.control output{font-variant-numeric:tabular-nums; font-weight:400}
+input[type=range]{width:100%; accent-color:var(--pink); height:1.6rem}
+.row{display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-bottom:1rem}
+.btn{font:inherit; font-weight:700; cursor:pointer; color:var(--panel); background:var(--ink); border:none; border-radius:4px; padding:.55rem 1rem}
+.btn.ghost{background:transparent; color:var(--ink); border:2px solid var(--ink); padding:.4rem .8rem; font-weight:400}
+.seg{display:inline-flex; border:2px solid var(--ink); border-radius:4px; overflow:hidden; margin-bottom:1rem}
+.seg button{font:inherit; cursor:pointer; background:transparent; color:var(--ink); border:none; padding:.4rem .75rem}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--panel); font-weight:700}
+.check{display:flex; align-items:center; gap:.5rem; cursor:pointer}
+.check input{width:1.2rem; height:1.2rem; accent-color:var(--pink)}
+.readout{border-top:2px dashed var(--line); padding-top:.9rem; margin:.25rem 0 0; display:grid; gap:.45rem}
+.readout div{display:flex; justify-content:space-between; gap:1rem; font-variant-numeric:tabular-nums}
+.readout dt{margin:0}
+.readout dd{margin:0; font-weight:700; text-align:right}
+.big dd{font-size:1.35rem}
+.dot{display:inline-block; width:.75rem; height:.75rem; border-radius:50%; margin-right:.4rem; vertical-align:middle}
+.tried{margin:.9rem 0 0; padding:0; list-style:none; display:flex; flex-wrap:wrap; gap:.4rem}
+.tried li{font-variant-numeric:tabular-nums; border:1.5px solid var(--line); border-radius:4px; padding:.15rem .5rem; font-size:.95rem}
+.tried-label{margin:.9rem 0 0; font-weight:700}
+.empty{color:var(--muted); font-size:.95rem; margin:.3rem 0 0}
+.say{margin:1.1rem 0 0; padding:.75rem .9rem; background:var(--hi-soft); border-radius:4px; font-size:1.05rem}
+.hint{color:var(--muted); font-size:.95rem; margin:.6rem .25rem 0}
+.fallback{padding:2rem; text-align:center}
+@media (max-width:900px){ .panel{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Three ideas behind calculus, in 3D</h1>
+    <div class="tabs" role="tablist" aria-label="Choose an idea">
+      <button class="tab" role="tab" id="t-lim" aria-controls="p-lim" aria-selected="true">Limits</button>
+      <button class="tab" role="tab" id="t-der" aria-controls="p-der" aria-selected="false" tabindex="-1">Derivatives</button>
+      <button class="tab" role="tab" id="t-int" aria-controls="p-int" aria-selected="false" tabindex="-1">Integrals</button>
+    </div>
+  </header>
+
+  <!-- LIMITS -->
+  <section class="panel" id="p-lim" role="tabpanel" aria-labelledby="t-lim">
+    <div>
+      <div class="stage"><canvas id="c-lim" aria-label="A surface with a missing point at the origin and a path approaching it"></canvas><button class="reset" data-reset="lim">Reset view</button></div>
+      <p class="hint" id="h-lim"></p>
+    </div>
+    <div class="side">
+      <h2>Approaching from every direction</h2>
+      <p class="lede">In 3D you can sneak up on a point from infinitely many directions. A limit only exists if every path leads to the same height.</p>
+      <div class="seg" role="group" aria-label="Surface">
+        <button data-f="ok" aria-pressed="true">Limit exists</button>
+        <button data-f="bad" aria-pressed="false">Limit fails</button>
+      </div>
+      <div class="control">
+        <label for="s-lim-a">Direction of approach <output id="o-lim-a"></output></label>
+        <input type="range" id="s-lim-a" min="0" max="355" step="5" value="30">
+      </div>
+      <div class="control">
+        <label for="s-lim-d">How close to the center <output id="o-lim-d"></output></label>
+        <input type="range" id="s-lim-d" min="0" max="100" value="0">
+      </div>
+      <div class="row"><button class="btn" id="b-lim">Move closer</button></div>
+      <dl class="readout">
+        <div class="big"><dt><span class="dot" style="background:var(--pink)"></span>Height along this path</dt><dd id="r-lim-v"></dd></div>
+        <div><dt>Exactly at the center</dt><dd>0 ÷ 0, undefined</dd></div>
+      </dl>
+      <p class="tried-label">Paths you've finished</p>
+      <ul class="tried" id="tried"></ul>
+      <p class="empty" id="tried-empty">Move all the way in to record a path, then try another direction.</p>
+      <p class="say" id="say-lim"></p>
+    </div>
+  </section>
+
+  <!-- DERIVATIVES -->
+  <section class="panel" id="p-der" role="tabpanel" aria-labelledby="t-der" hidden>
+    <div>
+      <div class="stage"><canvas id="c-der" aria-label="A wavy surface with a vertical slice and a line through two nearby points"></canvas><button class="reset" data-reset="der">Reset view</button></div>
+      <p class="hint">z = 1.6 sin(0.8x) cos(0.6y). Drag to rotate, scroll to zoom.</p>
+    </div>
+    <div class="side">
+      <h2>Steepness depends on direction</h2>
+      <p class="lede">On a surface, the slope depends on which way you walk. Pick a point and a direction, then shrink the gap just like in 2D.</p>
+      <div class="control">
+        <label for="s-der-x">Point, x <output id="o-der-x"></output></label>
+        <input type="range" id="s-der-x" min="-2.5" max="2.5" step="0.05" value="-0.8">
+      </div>
+      <div class="control">
+        <label for="s-der-y">Point, y <output id="o-der-y"></output></label>
+        <input type="range" id="s-der-y" min="-2.5" max="2.5" step="0.05" value="0.9">
+      </div>
+      <div class="control">
+        <label for="s-der-a">Direction to walk <output id="o-der-a"></output></label>
+        <input type="range" id="s-der-a" min="0" max="359" step="1" value="35">
+      </div>
+      <div class="row">
+        <button class="btn ghost" id="b-der-x">Walk along x</button>
+        <button class="btn ghost" id="b-der-y">Walk along y</button>
+      </div>
+      <div class="control">
+        <label for="s-der-h">Gap between the points <output id="o-der-h"></output></label>
+        <input type="range" id="s-der-h" min="0" max="100" value="0">
+      </div>
+      <div class="row">
+        <button class="btn" id="b-der">Shrink the gap</button>
+        <label class="check"><input type="checkbox" id="k-der"> Show tangent plane</label>
+      </div>
+      <dl class="readout">
+        <div><dt><span class="dot" style="background:var(--pink)"></span>Slope through both points</dt><dd id="r-der-s"></dd></div>
+        <div class="big"><dt><span class="dot" style="background:var(--green)"></span>Slope in this direction</dt><dd id="r-der-d"></dd></div>
+        <div><dt>Slope along x (∂f/∂x)</dt><dd id="r-der-fx"></dd></div>
+        <div><dt>Slope along y (∂f/∂y)</dt><dd id="r-der-fy"></dd></div>
+      </dl>
+      <p class="say">Every direction has its own slope. Yet the slopes along x and y alone build the whole tangent plane, and from it, the slope in any direction.</p>
+    </div>
+  </section>
+
+  <!-- INTEGRALS -->
+  <section class="panel" id="p-int" role="tabpanel" aria-labelledby="t-int" hidden>
+    <div>
+      <div class="stage"><canvas id="c-int" aria-label="Volume under a surface approximated by columns"></canvas><button class="reset" data-reset="int">Reset view</button></div>
+      <p class="hint">The volume under z = 1.2 + sin(x) cos(y), over a 4 by 3 rectangle.</p>
+    </div>
+    <div class="side">
+      <h2>Stacking thin columns</h2>
+      <p class="lede">Volume under a curved surface is hard. Boxes are easy. So we fill the space with boxes, then use more and thinner ones.</p>
+      <div class="control">
+        <label for="s-int">Columns per side <output id="o-int"></output></label>
+        <input type="range" id="s-int" min="1" max="40" value="3">
+      </div>
+      <div class="row">
+        <button class="btn" id="b-int">Add columns</button>
+        <label class="check"><input type="checkbox" id="k-int" checked> Show surface</label>
+      </div>
+      <div class="seg" role="group" aria-label="Column height taken from">
+        <button data-m="0" aria-pressed="true">Corner</button>
+        <button data-m="0.5" aria-pressed="false">Middle</button>
+      </div>
+      <dl class="readout">
+        <div><dt>Number of columns</dt><dd id="r-int-n"></dd></div>
+        <div><dt>Total of the columns</dt><dd id="r-int-e"></dd></div>
+        <div><dt>True volume</dt><dd id="r-int-t"></dd></div>
+        <div class="big"><dt>Still off by</dt><dd id="r-int-d"></dd></div>
+      </dl>
+      <p class="say">With infinitely many infinitely thin columns, the error vanishes. That exact total is the double integral.</p>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  if (!window.THREE){ document.querySelectorAll('.stage').forEach(s=>s.innerHTML='<p class="fallback">The 3D library could not load. Check your connection and reload.</p>'); return; }
+  const $ = id => document.getElementById(id);
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const V3 = (x,y,z) => new THREE.Vector3(x,y,z);
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  const fmt = (x,d) => (x < -1e-12 ? '−' : '') + Math.abs(x).toFixed(d);
+  const COL = { ink:css('--ink'), grid:css('--grid'), pink:css('--pink'), green:css('--green'), hi:css('--hi'), blue:css('--blue'), paper:css('--panel'), muted:css('--muted') };
+
+  /* ---------- shared 3D helpers ---------- */
+  function stage(canvas, o){
+    const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(36, 4/3, 0.1, 200);
+    camera.up.set(0,0,1);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.68));
+    const d1 = new THREE.DirectionalLight(0xffffff, 0.55); d1.position.set(5,-8,12); scene.add(d1);
+    const d2 = new THREE.DirectionalLight(0xffffff, 0.25); d2.position.set(-6,6,4); scene.add(d2);
+    const s = {renderer, scene, camera, az:o.az, el:o.el, dist:o.dist, target:o.target, w:0, h:0};
+    let drag = null;
+    canvas.addEventListener('pointerdown', e => { drag = {x:e.clientX, y:e.clientY}; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener('pointermove', e => {
+      if (!drag) return;
+      s.az -= (e.clientX-drag.x)*0.008;
+      s.el = clamp(s.el + (e.clientY-drag.y)*0.006, -0.25, 1.45);
+      drag = {x:e.clientX, y:e.clientY};
+    });
+    const end = () => drag = null;
+    canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+    canvas.addEventListener('wheel', e => { e.preventDefault(); s.dist = clamp(s.dist*(1+e.deltaY*0.001), o.dist*0.45, o.dist*2.2); }, {passive:false});
+    s.reset = () => { s.az=o.az; s.el=o.el; s.dist=o.dist; };
+    s.render = () => {
+      const r = canvas.getBoundingClientRect(); if (!r.width) return;
+      const w = Math.round(r.width), h = Math.round(r.height);
+      if (w!==s.w || h!==s.h){ renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); s.w=w; s.h=h; }
+      const t = s.target;
+      camera.position.set(t.x + s.dist*Math.cos(s.el)*Math.cos(s.az), t.y + s.dist*Math.cos(s.el)*Math.sin(s.az), t.z + s.dist*Math.sin(s.el));
+      camera.lookAt(t);
+      renderer.render(scene, camera);
+    };
+    return s;
+  }
+
+  function label(text, pos){
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.font = 'italic 700 80px Literata, Georgia, serif'; g.fillStyle = COL.ink;
+    g.textAlign='center'; g.textBaseline='middle'; g.fillText(text, 64, 66);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c), transparent:true, depthTest:false}));
+    sp.scale.set(0.5,0.5,1); sp.position.copy(pos); sp.renderOrder = 10;
+    return sp;
+  }
+
+  function frame(scene, xr, yr, zr, ax0){
+    const g = [];
+    for (let x=Math.ceil(xr[0]); x<=xr[1]+1e-9; x++) g.push(x,yr[0],0, x,yr[1],0);
+    for (let y=Math.ceil(yr[0]); y<=yr[1]+1e-9; y++) g.push(xr[0],y,0, xr[1],y,0);
+    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(g,3));
+    scene.add(new THREE.LineSegments(gg, new THREE.LineBasicMaterial({color:COL.grid})));
+    const [ox,oy] = ax0;
+    const a = [xr[0],oy,0, xr[1]+0.5,oy,0,  ox,yr[0],0, ox,yr[1]+0.5,0,  ox,oy,zr[0], ox,oy,zr[1]+0.4];
+    const ag = new THREE.BufferGeometry(); ag.setAttribute('position', new THREE.Float32BufferAttribute(a,3));
+    scene.add(new THREE.LineSegments(ag, new THREE.LineBasicMaterial({color:COL.ink})));
+    scene.add(label('x', V3(xr[1]+0.85, oy, 0)), label('y', V3(ox, yr[1]+0.85, 0)), label('z', V3(ox, oy, zr[1]+0.75)));
+  }
+
+  function surface(fn, map, ur, vr, nu, nv, o){
+    const pos=[], col=[], idx=[], lo=new THREE.Color(o.lo), hi=new THREE.Color(o.hi), c=new THREE.Color();
+    for (let i=0;i<=nu;i++) for (let j=0;j<=nv;j++){
+      const u=ur[0]+(ur[1]-ur[0])*i/nu, v=vr[0]+(vr[1]-vr[0])*j/nv, [x,y]=map(u,v), z=fn(x,y)*(o.zs||1);
+      pos.push(x,y,z);
+      c.copy(lo).lerp(hi, clamp((z-o.zr[0])/(o.zr[1]-o.zr[0]),0,1)); col.push(c.r,c.g,c.b);
+    }
+    const K = nv+1;
+    for (let i=0;i<nu;i++) for (let j=0;j<nv;j++){ const a=i*K+j, b=a+K; idx.push(a,b,a+1, b,b+1,a+1); }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col,3));
+    geo.setIndex(idx); geo.computeVertexNormals();
+    const op = o.opacity==null ? 1 : o.opacity;
+    const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({vertexColors:true, side:THREE.DoubleSide, transparent:op<1, opacity:op, depthWrite:op>=1, polygonOffset:true, polygonOffsetFactor:1, polygonOffsetUnits:1}));
+    const w=[], step=o.wire||5, P=k=>[pos[3*k],pos[3*k+1],pos[3*k+2]];
+    for (let i=0;i<=nu;i+=step) for (let j=0;j<nv;j++) w.push(...P(i*K+j), ...P(i*K+j+1));
+    for (let j=0;j<=nv;j+=step) for (let i=0;i<nu;i++) w.push(...P(i*K+j), ...P((i+1)*K+j));
+    const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(w,3));
+    const wire = new THREE.LineSegments(wg, new THREE.LineBasicMaterial({color:COL.ink, transparent:true, opacity:0.22}));
+    const grp = new THREE.Group(); grp.add(mesh, wire); grp.mesh = mesh;
+    grp.dispose = () => { geo.dispose(); mesh.material.dispose(); wg.dispose(); wire.material.dispose(); };
+    return grp;
+  }
+
+  const ball = (r, color) => new THREE.Mesh(new THREE.SphereGeometry(r, 24, 16), new THREE.MeshLambertMaterial({color}));
+  function rod(r, color){ return new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 12), new THREE.MeshLambertMaterial({color})); }
+  function place(m, a, b){
+    const d = b.clone().sub(a), L = d.length();
+    if (L < 1e-9){ m.visible=false; return; }
+    m.visible = true; m.position.copy(a).addScaledVector(d, 0.5); m.scale.set(1, L, 1);
+    m.quaternion.setFromUnitVectors(V3(0,1,0), d.normalize());
+  }
+  function dashLine(color){
+    const l = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({color, dashSize:0.12, gapSize:0.09}));
+    l.set = pts => { l.geometry.dispose(); l.geometry = new THREE.BufferGeometry().setFromPoints(pts); l.computeLineDistances(); };
+    return l;
+  }
+  function tube(color, r){
+    const m = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshLambertMaterial({color}));
+    m.set = pts => { m.geometry.dispose(); if (pts.length < 2){ m.visible=false; return; } m.visible=true;
+      m.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), Math.min(400, pts.length*2), r, 8, false); };
+    return m;
+  }
+  function animate(input, from, to, ms){
+    if (reduce){ input.value = to; input.dispatchEvent(new Event('input')); return; }
+    const t0 = performance.now();
+    (function step(t){
+      const k = Math.min(1,(t-t0)/ms), e = k<.5 ? 2*k*k : 1-Math.pow(-2*k+2,2)/2;
+      input.value = from + (to-from)*e; input.dispatchEvent(new Event('input'));
+      if (k<1) requestAnimationFrame(step);
+    })(t0);
+  }
+  function segGroup(sel, onPick){
+    const bs = [...document.querySelectorAll(sel)];
+    bs.forEach(b => b.addEventListener('click', () => { bs.forEach(o => o.setAttribute('aria-pressed', o===b)); onPick(b); }));
+  }
+
+  /* ---------- LIMITS ---------- */
+  const L = { st: stage($('c-lim'), {az:-0.95, el:0.5, dist:9.5, target:V3(0,0,0.3)}) };
+  const ZS = 1.6, RMAX = 2.2;
+  const FN = {
+    ok:  { f:(x,y)=>{ const q=x*x+y*y; return Math.sin(q)/q; }, zr:[-0.3*ZS, ZS], hint:'z = sin(x² + y²) ÷ (x² + y²), undefined at the center.',
+           say:'Every direction lands on the same height, 1. That shared target is the limit.' },
+    bad: { f:(x,y)=>2*x*y/(x*x+y*y), zr:[-ZS, ZS], hint:'z = 2xy ÷ (x² + y²), undefined at the center.',
+           say:'Each direction lands on its own height. With no single target, the limit does not exist, even though every individual path has an answer.' }
+  };
+  L.key = 'ok';
+  frame(L.st.scene, [-2.5,2.5], [-2.5,2.5], [-1.8,1.9], [0,0]);
+  L.path = tube(COL.pink, 0.035); L.pt = ball(0.09, COL.pink);
+  L.floor = dashLine(COL.pink); L.drop = dashLine(COL.pink);
+  L.hole = ball(0.075, COL.paper);
+  L.holeRing = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.02, 8, 32), new THREE.MeshBasicMaterial({color:COL.ink}));
+  L.axisQ = dashLine(COL.ink);
+  L.st.scene.add(L.path, L.pt, L.floor, L.drop, L.hole, L.holeRing, L.axisQ);
+  L.tried = [];
+  L.build = function(){
+    if (L.surf){ L.st.scene.remove(L.surf); L.surf.dispose(); }
+    const F = FN[L.key];
+    L.surf = surface(F.f, (r,t)=>[r*Math.cos(t), r*Math.sin(t)], [0.025,RMAX], [0,2*Math.PI], 70, 144,
+      {lo:COL.blue, hi:COL.hi, zr:F.zr, zs:ZS, opacity:0.9, wire:6});
+    L.st.scene.add(L.surf);
+    const ok = L.key==='ok';
+    L.hole.visible = ok; L.holeRing.visible = ok; L.axisQ.visible = !ok;
+    L.hole.position.set(0,0,ZS); L.holeRing.position.set(0,0,ZS);
+    L.axisQ.set([V3(0,0,-ZS), V3(0,0,ZS)]);
+    $('h-lim').textContent = F.hint; $('say-lim').textContent = F.say;
+    L.tried = []; L.showTried(); L.update();
+  };
+  L.showTried = function(){
+    $('tried').innerHTML = L.tried.map(p => `<li>${p.a}° → ${fmt(p.v,3)}</li>`).join('');
+    $('tried-empty').hidden = L.tried.length > 0;
+  };
+  L.update = function(){
+    const F = FN[L.key], a = +$('s-lim-a').value*Math.PI/180, c=Math.cos(a), s=Math.sin(a);
+    const r = RMAX*0.95*Math.pow(10, -3*$('s-lim-d').value/100);
+    const pts = [];
+    for (let i=0;i<=80;i++){ const rr = RMAX*0.95*Math.pow(r/(RMAX*0.95), i/80); pts.push(V3(rr*c, rr*s, F.f(rr*c, rr*s)*ZS + 0.02)); }
+    L.path.set(pts);
+    const v = F.f(r*c, r*s);
+    L.pt.position.set(r*c, r*s, v*ZS);
+    L.floor.set([V3(RMAX*c, RMAX*s, 0), V3(0,0,0)]);
+    L.drop.set([V3(r*c, r*s, 0), V3(r*c, r*s, v*ZS)]);
+    const dec = Math.max(3, Math.ceil(-Math.log10(r))+2);
+    $('o-lim-a').textContent = $('s-lim-a').value + '°';
+    $('o-lim-d').textContent = 'distance ' + r.toFixed(Math.min(5, dec-1));
+    $('r-lim-v').textContent = fmt(v, Math.min(6, dec));
+    if (r < 0.0025){
+      const deg = +$('s-lim-a').value;
+      if (!L.tried.some(p => p.a===deg)){ L.tried.unshift({a:deg, v}); L.tried = L.tried.slice(0,8); L.showTried(); }
+    }
+  };
+  $('s-lim-a').addEventListener('input', L.update);
+  $('s-lim-d').addEventListener('input', L.update);
+  $('b-lim').addEventListener('click', () => animate($('s-lim-d'), 0, 100, 4000));
+  segGroup('[data-f]', b => { L.key = b.dataset.f; L.build(); });
+  L.build();
+
+  /* ---------- DERIVATIVES ---------- */
+  const D = { st: stage($('c-der'), {az:-1.15, el:0.55, dist:12, target:V3(0,0,0)}) };
+  const f2 = (x,y) => 1.6*Math.sin(0.8*x)*Math.cos(0.6*y);
+  const fx = (x,y) => 1.28*Math.cos(0.8*x)*Math.cos(0.6*y);
+  const fy = (x,y) => -0.96*Math.sin(0.8*x)*Math.sin(0.6*y);
+  frame(D.st.scene, [-3,3], [-3,3], [-2,2.1], [-3,-3]);
+  D.st.scene.add(surface(f2, (u,v)=>[u,v], [-3,3], [-3,3], 90, 90, {lo:COL.blue, hi:COL.hi, zr:[-1.6,1.6], opacity:0.95, wire:6}));
+  const pg = new THREE.PlaneGeometry(8.6, 5); pg.rotateX(Math.PI/2);
+  D.slice = new THREE.Mesh(pg, new THREE.MeshBasicMaterial({color:COL.hi, transparent:true, opacity:0.18, side:THREE.DoubleSide, depthWrite:false}));
+  D.curve = tube(COL.ink, 0.025);
+  D.P = ball(0.1, COL.ink); D.Q = ball(0.085, COL.pink);
+  D.sec = rod(0.028, COL.pink); D.tan = rod(0.028, COL.green);
+  D.plane = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshLambertMaterial({color:COL.green, transparent:true, opacity:0.4, side:THREE.DoubleSide, depthWrite:false}));
+  D.st.scene.add(D.slice, D.curve, D.P, D.Q, D.sec, D.tan, D.plane);
+  D.update = function(){
+    const x0=+$('s-der-x').value, y0=+$('s-der-y').value, ang=+$('s-der-a').value*Math.PI/180;
+    const ux=Math.cos(ang), uy=Math.sin(ang), h=1.5*Math.pow(10,-3*$('s-der-h').value/100);
+    const z0=f2(x0,y0), z1=f2(x0+h*ux, y0+h*uy), m=(z1-z0)/h;
+    const gx=fx(x0,y0), gy=fy(x0,y0), du=gx*ux+gy*uy;
+    const P=V3(x0,y0,z0), Q=V3(x0+h*ux, y0+h*uy, z1);
+    D.P.position.copy(P); D.Q.position.copy(Q);
+    D.slice.position.set(x0, y0, 0); D.slice.rotation.set(0,0,ang);
+    const pts=[]; for (let t=-9;t<=9;t+=0.06){ const x=x0+t*ux, y=y0+t*uy; if (Math.abs(x)<=3 && Math.abs(y)<=3) pts.push(V3(x,y,f2(x,y)+0.01)); }
+    D.curve.set(pts);
+    const sd = V3(ux, uy, m).normalize(), td = V3(ux, uy, du).normalize();
+    place(D.sec, P.clone().addScaledVector(sd,-1.9), P.clone().addScaledVector(sd,1.9));
+    place(D.tan, P.clone().addScaledVector(td,-1.9), P.clone().addScaledVector(td,1.9));
+    const show = $('k-der').checked;
+    D.tan.visible = show; D.plane.visible = show;
+    if (show){
+      const g = new THREE.PlaneGeometry(2.6, 2.6, 1, 1), p = g.attributes.position;
+      for (let i=0;i<p.count;i++){ const a=p.getX(i), b=p.getY(i); p.setZ(i, gx*a + gy*b); }
+      g.computeVertexNormals(); D.plane.geometry.dispose(); D.plane.geometry = g; D.plane.position.copy(P);
+    }
+    $('o-der-x').textContent = fmt(x0,2); $('o-der-y').textContent = fmt(y0,2);
+    $('o-der-a').textContent = $('s-der-a').value + '°';
+    $('o-der-h').textContent = h>=0.01 ? h.toFixed(2) : h.toFixed(4);
+    $('r-der-s').textContent = fmt(m,3); $('r-der-d').textContent = fmt(du,3);
+    $('r-der-fx').textContent = fmt(gx,3); $('r-der-fy').textContent = fmt(gy,3);
+  };
+  ['s-der-x','s-der-y','s-der-a','s-der-h'].forEach(id => $(id).addEventListener('input', D.update));
+  $('k-der').addEventListener('change', D.update);
+  $('b-der').addEventListener('click', () => animate($('s-der-h'), 0, 100, 4000));
+  $('b-der-x').addEventListener('click', () => { $('s-der-a').value = 0; D.update(); });
+  $('b-der-y').addEventListener('click', () => { $('s-der-a').value = 90; D.update(); });
+  D.update();
+
+  /* ---------- INTEGRALS ---------- */
+  const I = { st: stage($('c-int'), {az:-1.25, el:0.5, dist:12.5, target:V3(2,1.5,0.6)}), m:0 };
+  const f3 = (x,y) => 1.2 + Math.sin(x)*Math.cos(y);
+  const XB=4, YB=3, TRUE = 1.2*XB*YB + (1-Math.cos(XB))*Math.sin(YB);
+  frame(I.st.scene, [0,XB], [0,YB], [0,2.5], [0,0]);
+  I.surf = surface(f3, (u,v)=>[u,v], [0,XB], [0,YB], 80, 60, {lo:COL.pink, hi:COL.pink, zr:[0,1], opacity:0.4, wire:6});
+  I.st.scene.add(I.surf);
+  const bg = new THREE.BoxGeometry(1,1,1); bg.translate(0,0,0.5);
+  I.boxes = new THREE.InstancedMesh(bg, new THREE.MeshLambertMaterial({color:COL.hi}), 1600);
+  I.edges = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color:COL.ink, transparent:true, opacity:0.55}));
+  I.st.scene.add(I.boxes, I.edges);
+  const M = new THREE.Matrix4(), Sc = new THREE.Vector3(), Ps = new THREE.Vector3(), Qn = new THREE.Quaternion();
+  I.update = function(){
+    const n = Math.round(+$('s-int').value), dx = XB/n, dy = YB/n, e = [];
+    let sum = 0, k = 0;
+    for (let i=0;i<n;i++) for (let j=0;j<n;j++){
+      const x = i*dx, y = j*dy, h = f3(x+I.m*dx, y+I.m*dy); sum += h*dx*dy;
+      Ps.set(x+dx/2, y+dy/2, 0); Sc.set(dx, dy, h); M.compose(Ps, Qn, Sc); I.boxes.setMatrixAt(k++, M);
+      if (n <= 16){
+        const X=[x,x+dx], Y=[y,y+dy];
+        for (const a of X) for (const b of Y) e.push(a,b,0, a,b,h);
+        for (const z of [0,h]){ e.push(x,y,z, x+dx,y,z, x,y+dy,z, x+dx,y+dy,z, x,y,z, x,y+dy,z, x+dx,y,z, x+dx,y+dy,z); }
+      }
+    }
+    I.boxes.count = k; I.boxes.instanceMatrix.needsUpdate = true;
+    I.edges.geometry.dispose(); I.edges.geometry = new THREE.BufferGeometry();
+    I.edges.geometry.setAttribute('position', new THREE.Float32BufferAttribute(e,3));
+    I.surf.visible = $('k-int').checked;
+    $('o-int').textContent = n;
+    $('r-int-n').textContent = n + ' × ' + n + ' = ' + (n*n);
+    $('r-int-e').textContent = sum.toFixed(4);
+    $('r-int-t').textContent = TRUE.toFixed(4);
+    $('r-int-d').textContent = Math.abs(sum-TRUE).toFixed(4);
+  };
+  $('s-int').addEventListener('input', I.update);
+  $('k-int').addEventListener('change', I.update);
+  $('b-int').addEventListener('click', () => animate($('s-int'), 1, 40, 5000));
+  segGroup('[data-m]', b => { I.m = +b.dataset.m; I.update(); });
+  I.update();
+
+  /* ---------- tabs, reset, render loop ---------- */
+  const demos = {lim:L, der:D, int:I}, keys = ['lim','der','int'];
+  let active = 'lim';
+  const tabs = [...document.querySelectorAll('.tab')];
+  function select(t){
+    tabs.forEach((o,i) => { const on = o===t; o.setAttribute('aria-selected', on); o.tabIndex = on?0:-1;
+      document.getElementById(o.getAttribute('aria-controls')).hidden = !on; if (on) active = keys[i]; });
+  }
+  tabs.forEach((t,i) => {
+    t.addEventListener('click', () => select(t));
+    t.addEventListener('keydown', e => {
+      if (e.key==='ArrowRight' || e.key==='ArrowLeft'){ const j=(i+(e.key==='ArrowRight'?1:-1)+3)%3; tabs[j].focus(); select(tabs[j]); }
+    });
+  });
+  document.addEventListener('keydown', e => { if (e.target.matches('input')) return; if (['1','2','3'].includes(e.key)) select(tabs[+e.key-1]); });
+  document.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => demos[b.dataset.reset].st.reset()));
+  const byHash = {limits:0, derivatives:1, integrals:2};
+  function fromHash(){ const k = location.hash.slice(1).toLowerCase(); if (k in byHash) select(tabs[byHash[k]]); }
+  window.addEventListener('hashchange', fromHash); fromHash();
+  (function loop(){ demos[active].st.render(); requestAnimationFrame(loop); })();
+})();
+</script>
+</body>
+</html>

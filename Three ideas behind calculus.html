@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Three ideas behind calculus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Literata:opsz,wght@7..72,500;7..72,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAFCF7; --grid:#DCE8F2; --ink:#1F3A5F; --muted:#5A6F88;
+  --hi:#F5DF4D; --hi-soft:rgba(245,223,77,.55); --pink:#D9467A; --green:#21895A;
+  --panel:#FFFFFF; --line:#C9D8E6;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#132033; --grid:#1E2F47; --ink:#E4EDF7; --muted:#9DB0C7;
+    --hi:#E8D24F; --hi-soft:rgba(232,210,79,.35); --pink:#FF7EA9; --green:#4FCB8F;
+    --panel:#182840; --line:#2B4062;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#132033; --grid:#1E2F47; --ink:#E4EDF7; --muted:#9DB0C7;
+  --hi:#E8D24F; --hi-soft:rgba(232,210,79,.35); --pink:#FF7EA9; --green:#4FCB8F;
+  --panel:#182840; --line:#2B4062;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; color:var(--ink); background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:28px 28px;
+  font-family:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  font-size:1.125rem; line-height:1.5;
+}
+.wrap{max-width:1240px; margin:0 auto; padding:1.5rem 1.25rem 3rem}
+header{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:1rem; margin-bottom:1.25rem}
+h1{font-family:"Literata", Georgia, serif; font-weight:700; font-size:clamp(1.8rem,3.5vw,2.6rem); line-height:1.1; margin:0}
+.tabs{display:flex; gap:.5rem; flex-wrap:wrap}
+.tab{
+  font:inherit; font-weight:700; cursor:pointer; color:var(--ink);
+  background:var(--panel); border:2px solid var(--line); border-radius:999px;
+  padding:.5rem 1.1rem;
+}
+.tab[aria-selected="true"]{background:var(--hi); border-color:var(--hi); color:#1F3A5F}
+.tab:focus-visible, button:focus-visible, input:focus-visible{outline:3px solid var(--pink); outline-offset:2px}
+.panel{display:grid; grid-template-columns:minmax(0,1.65fr) minmax(280px,1fr); gap:1.25rem; align-items:start}
+.panel[hidden]{display:none}
+.stage{background:var(--panel); border:2px solid var(--ink); border-radius:6px; padding:.5rem; overflow:hidden}
+canvas{display:block; width:100%; aspect-ratio:4/3; touch-action:none}
+.side{background:var(--panel); border:2px solid var(--line); border-radius:6px; padding:1.25rem 1.25rem 1.5rem}
+h2{font-family:"Literata", Georgia, serif; font-weight:700; font-size:1.6rem; line-height:1.2; margin:0 0 .5rem}
+.lede{margin:0 0 1.1rem; color:var(--muted)}
+.control{margin:0 0 1rem}
+.control label{display:flex; justify-content:space-between; gap:.5rem; font-weight:700; margin-bottom:.3rem}
+.control output{font-variant-numeric:tabular-nums; font-weight:400}
+input[type=range]{width:100%; accent-color:var(--pink); height:1.6rem}
+.row{display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-bottom:1rem}
+.btn{
+  font:inherit; font-weight:700; cursor:pointer; color:#fff; background:var(--ink);
+  border:none; border-radius:4px; padding:.55rem 1rem;
+}
+:root .btn{color:var(--panel)}
+.seg{display:inline-flex; border:2px solid var(--ink); border-radius:4px; overflow:hidden}
+.seg button{font:inherit; cursor:pointer; background:transparent; color:var(--ink); border:none; padding:.4rem .75rem}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--panel); font-weight:700}
+.check{display:flex; align-items:center; gap:.5rem; cursor:pointer}
+.check input{width:1.2rem; height:1.2rem; accent-color:var(--pink)}
+.readout{border-top:2px dashed var(--line); padding-top:.9rem; margin-top:.25rem; display:grid; gap:.45rem}
+.readout div{display:flex; justify-content:space-between; gap:1rem; font-variant-numeric:tabular-nums}
+.readout dt{margin:0}
+.readout dd{margin:0; font-weight:700; text-align:right}
+.big dd{font-size:1.35rem}
+.dot{display:inline-block; width:.75rem; height:.75rem; border-radius:50%; margin-right:.4rem; vertical-align:middle}
+.say{margin:1.1rem 0 0; padding:.75rem .9rem; background:var(--hi-soft); border-radius:4px; font-size:1.05rem}
+.hint{color:var(--muted); font-size:.95rem; margin:.6rem .25rem 0}
+@media (max-width:860px){ .panel{grid-template-columns:1fr} }
+@media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Three ideas behind calculus</h1>
+    <div class="tabs" role="tablist" aria-label="Choose an idea">
+      <button class="tab" role="tab" id="t-lim" aria-controls="p-lim" aria-selected="true">Limits</button>
+      <button class="tab" role="tab" id="t-der" aria-controls="p-der" aria-selected="false" tabindex="-1">Derivatives</button>
+      <button class="tab" role="tab" id="t-int" aria-controls="p-int" aria-selected="false" tabindex="-1">Integrals</button>
+    </div>
+  </header>
+
+  <!-- LIMITS -->
+  <section class="panel" id="p-lim" role="tabpanel" aria-labelledby="t-lim">
+    <div>
+      <div class="stage"><canvas id="c-lim" aria-label="Graph of y equals x squared minus 1 over x minus 1, with a hole at x equals 1"></canvas></div>
+      <p class="hint">The graph of y = (x² − 1) ÷ (x − 1). It has a hole at x = 1.</p>
+    </div>
+    <div class="side">
+      <h2>Getting as close as you like</h2>
+      <p class="lede">At x = 1 this formula breaks: it becomes 0 ÷ 0. But we can sneak up on 1 from both sides and watch what happens.</p>
+      <div class="control">
+        <label for="s-lim">How close to 1 <output id="o-lim"></output></label>
+        <input type="range" id="s-lim" min="0" max="100" value="0">
+      </div>
+      <div class="row"><button class="btn" id="b-lim">Move closer</button></div>
+      <dl class="readout">
+        <div><dt><span class="dot" style="background:var(--pink)"></span>From the left</dt><dd id="r-lim-l"></dd></div>
+        <div><dt><span class="dot" style="background:var(--green)"></span>From the right</dt><dd id="r-lim-r"></dd></div>
+        <div><dt>Exactly at x = 1</dt><dd>0 ÷ 0, undefined</dd></div>
+      </dl>
+      <p class="say">We can never plug in 1, yet the answers close in on 2 from both sides. That target is the limit.</p>
+    </div>
+  </section>
+
+  <!-- DERIVATIVES -->
+  <section class="panel" id="p-der" role="tabpanel" aria-labelledby="t-der" hidden>
+    <div>
+      <div class="stage"><canvas id="c-der" aria-label="A curve with a line through two nearby points"></canvas></div>
+      <p class="hint">Drag on the graph to move the point.</p>
+    </div>
+    <div class="side">
+      <h2>Steepness at a single point</h2>
+      <p class="lede">Slope needs two points: rise over run. To find the steepness at just one point, we bring the second point closer and closer.</p>
+      <div class="control">
+        <label for="s-der-x">Where on the curve <output id="o-der-x"></output></label>
+        <input type="range" id="s-der-x" min="-2.5" max="2" step="0.01" value="-1.5">
+      </div>
+      <div class="control">
+        <label for="s-der-h">Gap between the points <output id="o-der-h"></output></label>
+        <input type="range" id="s-der-h" min="0" max="100" value="0">
+      </div>
+      <div class="row">
+        <button class="btn" id="b-der">Shrink the gap</button>
+        <label class="check"><input type="checkbox" id="k-der"> Show the true tangent</label>
+      </div>
+      <dl class="readout">
+        <div><dt>Slope of the line through both points</dt><dd id="r-der-s"></dd></div>
+        <div class="big"><dt>Slope exactly at the point</dt><dd id="r-der-t"></dd></div>
+      </dl>
+      <p class="say">As the gap shrinks, the line stops cutting through the curve and just touches it. Its slope is the derivative: the speedometer reading at one instant.</p>
+    </div>
+  </section>
+
+  <!-- INTEGRALS -->
+  <section class="panel" id="p-int" role="tabpanel" aria-labelledby="t-int" hidden>
+    <div>
+      <div class="stage"><canvas id="c-int" aria-label="Area under a curve approximated by rectangles"></canvas></div>
+      <p class="hint">The area under y = 2 + sin(x), from x = 0 to x = 6.</p>
+    </div>
+    <div class="side">
+      <h2>Adding up thin slices</h2>
+      <p class="lede">Curved areas are hard. Rectangles are easy. So we fill the area with rectangles and use more and thinner ones.</p>
+      <div class="control">
+        <label for="s-int">Number of rectangles <output id="o-int"></output></label>
+        <input type="range" id="s-int" min="1" max="80" value="3">
+      </div>
+      <div class="row">
+        <button class="btn" id="b-int">Add rectangles</button>
+        <div class="seg" role="group" aria-label="Rectangle height taken from">
+          <button data-m="0" aria-pressed="true">Left</button>
+          <button data-m="0.5" aria-pressed="false">Middle</button>
+          <button data-m="1" aria-pressed="false">Right</button>
+        </div>
+      </div>
+      <dl class="readout">
+        <div><dt>Total of the rectangles</dt><dd id="r-int-e"></dd></div>
+        <div><dt>True area</dt><dd id="r-int-t"></dd></div>
+        <div class="big"><dt>Still off by</dt><dd id="r-int-d"></dd></div>
+      </dl>
+      <p class="say">With infinitely many infinitely thin rectangles, the error disappears. That exact total is the integral.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const v = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const fmt = (x, d) => (x < 0 ? '−' : '') + Math.abs(x).toFixed(d);
+
+  function setup(canvas){
+    const dpr = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect();
+    if (!r.width) return null;
+    canvas.width = Math.round(r.width * dpr);
+    canvas.height = Math.round(r.height * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return {ctx, w:r.width, h:r.height};
+  }
+  function view(w,h,xr,yr){
+    const p = Math.max(28, Math.min(44, w*0.06));
+    const sx = (w-2*p)/(xr[1]-xr[0]), sy = (h-2*p)/(yr[1]-yr[0]);
+    return {xr,yr,w,h,p, X:x=>p+(x-xr[0])*sx, Y:y=>h-p-(y-yr[0])*sy, invX:px=>xr[0]+(px-p)/sx};
+  }
+  function axes(ctx,V){
+    const grid=v('--grid'), ink=v('--ink'), muted=v('--muted');
+    ctx.lineWidth=1; ctx.strokeStyle=grid;
+    for(let x=Math.ceil(V.xr[0]); x<=V.xr[1]; x++){ctx.beginPath();ctx.moveTo(V.X(x),V.Y(V.yr[0]));ctx.lineTo(V.X(x),V.Y(V.yr[1]));ctx.stroke();}
+    for(let y=Math.ceil(V.yr[0]); y<=V.yr[1]; y++){ctx.beginPath();ctx.moveTo(V.X(V.xr[0]),V.Y(y));ctx.lineTo(V.X(V.xr[1]),V.Y(y));ctx.stroke();}
+    ctx.strokeStyle=ink; ctx.lineWidth=1.5;
+    if (V.yr[0]<=0 && V.yr[1]>=0){ctx.beginPath();ctx.moveTo(V.X(V.xr[0]),V.Y(0));ctx.lineTo(V.X(V.xr[1]),V.Y(0));ctx.stroke();}
+    if (V.xr[0]<=0 && V.xr[1]>=0){ctx.beginPath();ctx.moveTo(V.X(0),V.Y(V.yr[0]));ctx.lineTo(V.X(0),V.Y(V.yr[1]));ctx.stroke();}
+    ctx.fillStyle=muted; ctx.font='13px "Atkinson Hyperlegible", sans-serif';
+    const y0 = Math.min(Math.max(0,V.yr[0]),V.yr[1]), x0 = Math.min(Math.max(0,V.xr[0]),V.xr[1]);
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    for(let x=Math.ceil(V.xr[0]); x<=V.xr[1]; x++){ if(x!==0) ctx.fillText(String(x).replace('-','−'), V.X(x), V.Y(y0)+4); }
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    for(let y=Math.ceil(V.yr[0]); y<=V.yr[1]; y++){ if(y!==0) ctx.fillText(String(y).replace('-','−'), V.X(x0)-5, V.Y(y)); }
+  }
+  function curve(ctx,V,f,color,width){
+    ctx.save(); ctx.beginPath(); ctx.rect(V.p-2,V.p-2,V.w-2*V.p+4,V.h-2*V.p+4); ctx.clip();
+    ctx.strokeStyle=color; ctx.lineWidth=width; ctx.lineJoin='round'; ctx.beginPath();
+    const N=500; for(let i=0;i<=N;i++){const x=V.xr[0]+(V.xr[1]-V.xr[0])*i/N; const px=V.X(x), py=V.Y(f(x)); i?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+    ctx.stroke(); ctx.restore();
+  }
+  function dot(ctx,x,y,r,fill,stroke){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.lineWidth=2.5;ctx.strokeStyle=stroke;ctx.stroke();}}
+  function dashed(ctx,x1,y1,x2,y2,color){ctx.save();ctx.setLineDash([5,5]);ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+  function animate(input, from, to, ms, done){
+    if (reduce){ input.value=to; input.dispatchEvent(new Event('input')); done&&done(); return; }
+    const t0=performance.now();
+    (function step(t){
+      const k=Math.min(1,(t-t0)/ms), e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+      input.value = from+(to-from)*e; input.dispatchEvent(new Event('input'));
+      k<1 ? requestAnimationFrame(step) : done&&done();
+    })(t0);
+  }
+
+  /* ---------- Limits ---------- */
+  const L = {c:document.getElementById('c-lim'), s:document.getElementById('s-lim')};
+  const fl = x => (x*x-1)/(x-1);
+  L.draw = function(){
+    const S=setup(L.c); if(!S) return; const {ctx,w,h}=S;
+    ctx.clearRect(0,0,w,h);
+    const V=view(w,h,[-1,3],[-0.5,4.5]); axes(ctx,V);
+    const d = Math.pow(10, -3*L.s.value/100);
+    const ink=v('--ink'), pink=v('--pink'), green=v('--green'), panel=v('--panel'), hi=v('--hi');
+    ctx.save(); ctx.strokeStyle=hi; ctx.lineWidth=8; ctx.globalAlpha=.6;
+    ctx.beginPath(); ctx.moveTo(V.X(V.xr[0]),V.Y(2)); ctx.lineTo(V.X(1),V.Y(2)); ctx.stroke(); ctx.restore();
+    curve(ctx,V,x=>x+1,ink,3);
+    const pts=[[1-d,pink],[1+d,green]];
+    pts.forEach(([x,c])=>{ const y=fl(x); dashed(ctx,V.X(x),V.Y(0),V.X(x),V.Y(y),c); dashed(ctx,V.X(0),V.Y(y),V.X(x),V.Y(y),c); });
+    dot(ctx,V.X(1),V.Y(2),7,panel,ink);
+    pts.forEach(([x,c])=>dot(ctx,V.X(x),V.Y(fl(x)),6,c));
+    const dec = Math.max(2, Math.ceil(-Math.log10(d))+1);
+    document.getElementById('o-lim').textContent = 'within '+d.toFixed(Math.max(1,dec-1));
+    document.getElementById('r-lim-l').textContent = 'x = '+(1-d).toFixed(dec)+' → '+fl(1-d).toFixed(dec);
+    document.getElementById('r-lim-r').textContent = 'x = '+(1+d).toFixed(dec)+' → '+fl(1+d).toFixed(dec);
+  };
+  L.s.addEventListener('input', L.draw);
+  document.getElementById('b-lim').addEventListener('click', ()=>animate(L.s, 0, 100, 4000));
+
+  /* ---------- Derivatives ---------- */
+  const D = {c:document.getElementById('c-der'), x:document.getElementById('s-der-x'), h:document.getElementById('s-der-h'), k:document.getElementById('k-der')};
+  const fd = x => 0.2*x*x*x - x + 1, fdp = x => 0.6*x*x - 1;
+  D.V = null;
+  D.draw = function(){
+    const S=setup(D.c); if(!S) return; const {ctx,w,h}=S;
+    ctx.clearRect(0,0,w,h);
+    const V=view(w,h,[-3,3.6],[-2,6.5]); D.V=V; axes(ctx,V);
+    const ink=v('--ink'), pink=v('--pink'), green=v('--green'), muted=v('--muted'), hi=v('--hi');
+    const x0=+D.x.value, hh = 1.5*Math.pow(10,-3*D.h.value/100);
+    const x1=x0+hh, y0=fd(x0), y1=fd(x1), m=(y1-y0)/hh;
+    curve(ctx,V,fd,ink,3);
+    // rise/run triangle
+    const runPx = V.X(x1)-V.X(x0);
+    if (runPx>26){
+      ctx.save(); ctx.fillStyle=hi; ctx.globalAlpha=.45; ctx.beginPath();
+      ctx.moveTo(V.X(x0),V.Y(y0)); ctx.lineTo(V.X(x1),V.Y(y0)); ctx.lineTo(V.X(x1),V.Y(y1)); ctx.closePath(); ctx.fill(); ctx.restore();
+      ctx.fillStyle=muted; ctx.font='14px "Atkinson Hyperlegible", sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline= y1>y0?'top':'bottom';
+      ctx.fillText('run', (V.X(x0)+V.X(x1))/2, V.Y(y0)+(y1>y0?4:-4));
+      ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText('rise', V.X(x1)+5, (V.Y(y0)+V.Y(y1))/2);
+    }
+    if (D.k.checked){ const t=fdp(x0); curve(ctx,V,x=>y0+t*(x-x0),green,2); }
+    curve(ctx,V,x=>y0+m*(x-x0),pink,2.5);
+    dot(ctx,V.X(x1),V.Y(y1),6,pink);
+    dot(ctx,V.X(x0),V.Y(y0),7,ink);
+    document.getElementById('o-der-x').textContent = 'x = '+fmt(x0,2);
+    document.getElementById('o-der-h').textContent = hh>=0.01? hh.toFixed(2) : hh.toFixed(3);
+    document.getElementById('r-der-s').textContent = fmt(m,3);
+    document.getElementById('r-der-t').textContent = fmt(fdp(x0),3);
+  };
+  [D.x,D.h,D.k].forEach(el=>el.addEventListener('input',D.draw));
+  D.k.addEventListener('change',D.draw);
+  document.getElementById('b-der').addEventListener('click', ()=>animate(D.h, 0, 100, 4000));
+  let dragging=false;
+  const dragTo = e => { if(!D.V) return; const r=D.c.getBoundingClientRect(); const x=D.V.invX(e.clientX-r.left);
+    D.x.value=Math.max(+D.x.min,Math.min(+D.x.max,x)); D.draw(); };
+  D.c.addEventListener('pointerdown', e=>{dragging=true; D.c.setPointerCapture(e.pointerId); dragTo(e);});
+  D.c.addEventListener('pointermove', e=>{ if(dragging) dragTo(e); });
+  D.c.addEventListener('pointerup', ()=>dragging=false);
+  D.c.addEventListener('pointercancel', ()=>dragging=false);
+
+  /* ---------- Integrals ---------- */
+  const I = {c:document.getElementById('c-int'), s:document.getElementById('s-int'), m:0};
+  const fi = x => 2 + Math.sin(x), A=0, B=6;
+  const trueArea = 2*(B-A) - Math.cos(B) + Math.cos(A);
+  I.draw = function(){
+    const S=setup(I.c); if(!S) return; const {ctx,w,h}=S;
+    ctx.clearRect(0,0,w,h);
+    const V=view(w,h,[-0.5,6.5],[-0.5,3.5]); axes(ctx,V);
+    const n=Math.round(+I.s.value), dx=(B-A)/n, ink=v('--ink'), hi=v('--hi'), pink=v('--pink');
+    let sum=0;
+    ctx.lineWidth = n>40?0.75:1.25;
+    for(let i=0;i<n;i++){
+      const xl=A+i*dx, y=fi(xl+I.m*dx); sum+=y*dx;
+      const px=V.X(xl), pw=V.X(xl+dx)-px, py=V.Y(y), ph=V.Y(0)-py;
+      ctx.fillStyle=hi; ctx.globalAlpha=.7; ctx.fillRect(px,py,pw,ph); ctx.globalAlpha=1;
+      ctx.strokeStyle=ink; ctx.strokeRect(px,py,pw,ph);
+    }
+    curve(ctx,V,fi,pink,3);
+    document.getElementById('o-int').textContent = n;
+    document.getElementById('r-int-e').textContent = sum.toFixed(4);
+    document.getElementById('r-int-t').textContent = trueArea.toFixed(4);
+    document.getElementById('r-int-d').textContent = Math.abs(sum-trueArea).toFixed(4);
+  };
+  I.s.addEventListener('input', I.draw);
+  document.getElementById('b-int').addEventListener('click', ()=>animate(I.s, 1, 80, 5000));
+  document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.seg button').forEach(o=>o.setAttribute('aria-pressed', o===b));
+    I.m=+b.dataset.m; I.draw();
+  }));
+
+  /* ---------- Tabs, resize, theme ---------- */
+  const tabs=[...document.querySelectorAll('.tab')];
+  function select(t){
+    tabs.forEach(o=>{const on=o===t; o.setAttribute('aria-selected',on); o.tabIndex=on?0:-1;
+      document.getElementById(o.getAttribute('aria-controls')).hidden=!on;});
+    redrawAll();
+  }
+  tabs.forEach((t,i)=>{
+    t.addEventListener('click',()=>select(t));
+    t.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight'||e.key==='ArrowLeft'){const j=(i+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length; tabs[j].focus(); select(tabs[j]);}
+    });
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.target.matches('input')) return;
+    if(['1','2','3'].includes(e.key)) select(tabs[+e.key-1]);
+  });
+  function redrawAll(){ L.draw(); D.draw(); I.draw(); }
+  const ro=new ResizeObserver(redrawAll);
+  [L.c,D.c,I.c].forEach(c=>ro.observe(c));
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redrawAll);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(redrawAll);
+  redrawAll();
+})();
+</script>
+</body>
+</html>
